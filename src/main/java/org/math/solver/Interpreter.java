@@ -10,16 +10,12 @@ class Interpreter implements Expr.Visitor<Expr> {
 
 
     List<Expr> interpret(List<Expr> expressions) {
-        try {
-            List<Expr> evaluatedExpressions = new ArrayList<>();
-            for (Expr expression : expressions) {
-                evaluatedExpressions.add(execute(expression));
-            }
-            return evaluatedExpressions;
-        } catch (RuntimeError error) {
-            MathProblemSolver.runtimeError(error);
+        List<Expr> evaluatedExpressions = new ArrayList<>();
+        for (Expr expression : expressions) {
+            evaluatedExpressions.add(execute(expression));
         }
-        return null;
+        return evaluatedExpressions;
+
     }
     @Override
     public Expr visitLiteralExpr(Expr.Literal expr) {

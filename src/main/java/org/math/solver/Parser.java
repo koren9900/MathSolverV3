@@ -113,9 +113,13 @@ class Parser {
             else
                 return new Expr.Vector(values);
         }
-
-
-        throw error(peek(), "Expect expression.");
+        if(peek().type == TokenType.EOF){
+            throw error(peek(), "incomplete expression");
+        }
+        if(peek().type == TokenType.IDENTIFIER){
+            throw error(peek(), peek() + " is an unrecognised identifier");
+        }
+        throw error(peek(), peek().toString() + " is not in the correct place");
     }
 
 
@@ -156,8 +160,7 @@ class Parser {
     }
 
     private ParseError error(Token token, String message) {
-        MathProblemSolver.error(token, message);
-        return new ParseError();
+        throw new RuntimeError(token, message);
     }
 
 

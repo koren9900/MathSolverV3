@@ -14,5 +14,5 @@ enum TokenType {
     // Keywords.
     FUNC,
 
-    EOF
+    NULL, EOF
 }

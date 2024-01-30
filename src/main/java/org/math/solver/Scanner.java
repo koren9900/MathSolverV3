@@ -72,23 +72,26 @@ class Scanner {
                 } else if (isAlpha(c)) {
                     identifier();
                 } else {
-                    MathProblemSolver.error(line, "Unexpected character.");
+                    throw new RuntimeError(new Token(TokenType.NULL,"","",line), "Unexpected character.");
                 }
                 break;
         }
     }
 
     private void identifier() {
-        while (isAlphaNumeric(peek())) advance();
+        while (isAlpha(peek())) advance();
 
         String text = source.substring(start, current).toLowerCase();
 
         if (!keywords.contains(text))
             for(char c : text.toCharArray())
-                addToken(TokenType.IDENTIFIER, Character.toString(c));
+                addIdentifierToken(Character.toString(c));
         else
             addToken(TokenType.FUNC);
     }
+
+
+
     private void number() {
         while (isDigit(peek())) advance();
         // Look for a fractional part.
@@ -122,11 +125,6 @@ class Scanner {
                 (c >= 'A' && c <= 'Z') ||
                 c == '_';
     }
-
-    private boolean isAlphaNumeric(char c) {
-        return isAlpha(c) || isDigit(c);
-    }
-
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
@@ -149,5 +147,9 @@ class Scanner {
         if(type == TokenType.FUNC)
             text = text.toLowerCase();
         tokens.add(new Token(type, text, literal, line));
+    }
+
+    private void addIdentifierToken(String literal) {
+        tokens.add(new Token(TokenType.IDENTIFIER, literal, literal, line));
     }
 }

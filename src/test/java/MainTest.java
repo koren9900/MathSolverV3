@@ -1,10 +1,14 @@
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.math.solver.MathProblemSolver;
-import org.mockito.Mockito;
+import org.math.solver.RuntimeError;
+
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 public class MainTest {
+
     @Test
     public void testLiteralBinary(){
         // check literals work correctly
@@ -22,13 +26,17 @@ public class MainTest {
         assertEquals(new MathProblemSolver("121^0.5").solve(), "121^0.5=11");
         assertEquals(new MathProblemSolver("121+4^0.5-4").solve(), "121+4^0.5-4=119");
     }
-    @Test
-    public void testLiteralFactorial(){
+    @ParameterizedTest
+    @CsvSource(textBlock= """
+            # Input,    Expected
+              1!,       1!=1
+              2!,        2!=2
+              3!,        3!=6
+              7!,        7!=5040
+            """)
+    public void testLiteralFactorial(String input, String expected){
         // check factorial works
-        assertEquals(new MathProblemSolver("1!").solve(), "1!=1");
-        assertEquals(new MathProblemSolver("2!").solve(), "2!=2");
-        assertEquals(new MathProblemSolver("3!").solve(), "3!=6");
-        assertEquals(new MathProblemSolver("7!").solve(), "7!=5040");
+        assertEquals(new MathProblemSolver(input).solve(), expected);
     }
     @Test
     public void testLiteralNegation(){
@@ -43,30 +51,36 @@ public class MainTest {
         assertEquals(new MathProblemSolver("100/-10").solve(), "100/-10=-10");
         assertEquals(new MathProblemSolver("-5/-0.5").solve(), "-5/-0.5=10");
     }
-    @Test
-    public void testLiteralFactorialNegation(){
+    @ParameterizedTest
+    @CsvSource(textBlock= """
+            # Input,    Expected
+              -5!,      -5!=-120
+              -1!,      -1!=-1
+            """)
+    public void testLiteralFactorialNegation(String input, String expected){
         // check factorial works
-        assertEquals(new MathProblemSolver("-5!").solve(), "-5!=-120");
-        assertEquals(new MathProblemSolver("-1!").solve(), "-1!=-1");
+        assertEquals(new MathProblemSolver(input).solve(), expected);
     }
-    @Test
-    public void testGrouping(){
+
+    @ParameterizedTest
+    @CsvSource(textBlock= """
+            # Input,                    Expected
+              (5),                      (5)=5
+              (5)+1,                    (5)+1=6
+              (5*3),                    (5*3)=15
+              (5-4+3/1),                (5-4+3/1)=4
+              (9-0+1)*(1+3),            (9-0+1)*(1+3)=40
+              8+(1/2)+(0.5)-9+(5^2),    8+(1/2)+(0.5)-9+(5^2)=25
+              (1+2+3*3)+(7/4)*(1--3),   (1+2+3*3)+(7/4)*(1--3)=19
+              -(7+4),                   -(7+4)=-11
+              5*-(11*2),                5*-(11*2)=-110
+              (1+2)!+3,                 (1+2)!+3=9
+            """)
+    public void testGrouping(String input, String expected){
         // check single literal
-        assertEquals(new MathProblemSolver("(5)").solve(), "(5)=5");
-        assertEquals(new MathProblemSolver("(5)+1").solve(), "(5)+1=6");
-        // check single parentheses
-        assertEquals(new MathProblemSolver("(5*3)").solve(), "(5*3)=15");
-        assertEquals(new MathProblemSolver("(5-4+3/1)").solve(), "(5-4+3/1)=4");
-        // check multiple parentheses
-        assertEquals(new MathProblemSolver("(9-0+1)*(1+3)").solve(), "(9-0+1)*(1+3)=40");
-        assertEquals(new MathProblemSolver("8+(1/2)+(0.5)-9+(5^2)").solve(), "8+(1/2)+(0.5)-9+(5^2)=25");
-        assertEquals(new MathProblemSolver("(1+2+3*3)+(7/4)*(1--3)").solve(), "(1+2+3*3)+(7/4)*(1--3)=19");
-        // check negated parentheses
-        assertEquals(new MathProblemSolver("-(7+4)").solve(), "-(7+4)=-11");
-        assertEquals(new MathProblemSolver("5*-(11*2)").solve(), "5*-(11*2)=-110");
-        // check factored parentheses
-        assertEquals(new MathProblemSolver("(1+2)!+3").solve(), "(1+2)!+3=9");
+        assertEquals(new MathProblemSolver(input).solve(), expected);
     }
+
     @Test
     public void testLiteralFunctions(){
         // check functions work
@@ -117,9 +131,23 @@ public class MainTest {
         assertEquals(new MathProblemSolver("-(1,1)").solve(), "-(1,1)=(-1,-1)");
         assertEquals(new MathProblemSolver("(5,3)+-(2,3)").solve(), "(5,3)+-(2,3)=(3,0)");
     }
-    @Test
-    public void testOperationsErrors(){
-      MathProblemSolver mockSolver = Mockito.mock(MathProblemSolver.class);
-
+    @ParameterizedTest
+    @CsvSource(textBlock= """
+            # Input,                            Expected Error
+              (3+4)):                           ) is not in the correct place
+              5+4-6^6++5:                       + is not in the correct place
+              5+*max(12,7):                     * is not in the correct place
+              (-:                               incomplete expression
+              5!+(9-13)!-max(3,13*2):           Factorial works only on natural numbers
+              444- !max(12,7):                  ! is not in the correct place
+              min(4,min(45,max(5^(4-3)))):      Max functions take at least two parameters
+              sqrt(max(4,5),89-89):             Sqrt functions take exactly one parameter
+              max(min(3,4,3,3),fun(23)):        f is an unrecognised identifier
+              8!+max7,8)-120:                   Expect '(' after a function
+              2^min(4,7,max(-1,7):              Expect '(' in the end of a function
+            """,delimiter = ':')
+    public void testErrors(String input, String error){
+      Exception e = assertThrows(RuntimeError.class, ()-> new MathProblemSolver(input).solve() );
+      assertEquals(e.getMessage(), error);
     }
 }

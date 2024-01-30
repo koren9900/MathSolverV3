@@ -5,16 +5,11 @@ import java.util.List;
 public class Stringer  implements Expr.Visitor<String> {
 
     public StringBuilder stringify(List<Expr> expressions){
-        try {
-            StringBuilder str = new StringBuilder();
-            for (Expr expression : expressions) {
-                str.append(expression.accept(this));
-            }
-            return str;
-        } catch (RuntimeError error) {
-            MathProblemSolver.runtimeError(error);
+        StringBuilder str = new StringBuilder();
+        for (Expr expression : expressions) {
+            str.append(expression.accept(this));
         }
-        return null;
+        return str;
     }
     @Override
     public String visitBinaryExpr(Expr.Binary expr) {
